@@ -1,31 +1,35 @@
 """
 Musical DNA — MIDI Data Setup
 ==============================
-Downloads and organizes MIDI files from music21's built-in corpus
-for the initial dataset. This gives you a head start while you
-gather additional MIDI files from external sources.
+Downloads and organizes MIDI files from music21's built-in corpus.
+This gives you a starter dataset while you gather additional files.
 
 Usage:
     python src/setup_data.py
 
-This creates:
-    data/midi/bach/       — Bach chorales and keyboard works
-    data/midi/mozart/     — Mozart piano sonatas
-    data/midi/beethoven/  — Beethoven piano sonatas
-    data/midi/chopin/     — (placeholder — download from external sources)
-    data/midi/debussy/    — (placeholder — download from external sources)
-
-After running this, supplement with MIDI files from:
-    - Lakh MIDI Dataset (lmd.io)
-    - IMSLP.org
-    - MuseScore.com
-    - KernScores (kern.humdrum.org)
+NOTE: The music21 corpus has limited pieces for some composers.
+After running this, you'll need to download additional MIDI files
+manually from IMSLP, MuseScore, etc. (see instructions at the end).
 """
 
 import os
 import sys
+import signal
+import warnings
 from pathlib import Path
+
+# Suppress music21 warnings about overfull measures
+warnings.filterwarnings('ignore', category=UserWarning)
+
 from music21 import corpus, converter
+
+
+# Timeout handler for pieces that take too long to parse
+class ParseTimeoutError(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise ParseTimeoutError("Parsing took too long")
 
 
 def create_directory_structure():
@@ -37,72 +41,96 @@ def create_directory_structure():
         path.mkdir(parents=True, exist_ok=True)
         print(f"  Created: {path}/")
     
-    # Also create processed and copyright_cases dirs
-    Path('data/processed').mkdir(parents=True, exist_ok=True)
-    Path('data/copyright_cases').mkdir(parents=True, exist_ok=True)
-    Path('models').mkdir(parents=True, exist_ok=True)
-    Path('notebooks').mkdir(parents=True, exist_ok=True)
-    Path('dashboard').mkdir(parents=True, exist_ok=True)
-    
-    # Create .gitkeep files for empty directories
-    for d in ['data/processed', 'data/copyright_cases', 'models', 'dashboard']:
+    for d in ['data/processed', 'data/copyright_cases', 'models', 'notebooks', 'dashboard']:
+        Path(d).mkdir(parents=True, exist_ok=True)
         gitkeep = Path(d) / '.gitkeep'
         if not gitkeep.exists():
             gitkeep.touch()
 
 
+def safe_export(corpus_path, out_path, timeout_sec=30):
+    """Parse and export a single piece with a timeout.
+    
+    Returns True on success, False on failure.
+    """
+    try:
+        # Set a timeout (Unix/Mac only — on Windows this is skipped)
+        if hasattr(signal, 'SIGALRM'):
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(timeout_sec)
+        
+        score = corpus.parse(corpus_path)
+        score.write('midi', fp=out_path)
+        
+        # Cancel the alarm
+        if hasattr(signal, 'SIGALRM'):
+            signal.alarm(0)
+        
+        return True
+    except ParseTimeoutError:
+        print(f"    Skipped (too slow): {Path(str(corpus_path)).stem}")
+        return False
+    except Exception as e:
+        return False
+    finally:
+        if hasattr(signal, 'SIGALRM'):
+            signal.alarm(0)
+
+
 def export_corpus_pieces():
     """Export pieces from music21's built-in corpus as MIDI files."""
     
-    # Bach — chorales are easily available in the corpus
-    print("\nExporting Bach pieces from music21 corpus...")
-    bach_chorales = corpus.getComposer('bach')
-    exported_bach = 0
-    for path in bach_chorales[:50]:  # Get up to 50
-        try:
-            score = corpus.parse(path)
-            filename = Path(path).stem.replace(' ', '_')
-            out_path = f'data/midi/bach/{filename}.mid'
-            if not os.path.exists(out_path):
-                score.write('midi', fp=out_path)
-                exported_bach += 1
-        except Exception as e:
-            continue
-    print(f"  Exported {exported_bach} Bach pieces")
+    total = 0
     
-    # Mozart — K545 and other available pieces
-    print("\nExporting Mozart pieces from music21 corpus...")
-    mozart_pieces = corpus.getComposer('mozart')
-    exported_mozart = 0
-    for path in mozart_pieces[:50]:
-        try:
-            score = corpus.parse(path)
-            filename = Path(path).stem.replace(' ', '_')
-            out_path = f'data/midi/mozart/{filename}.mid'
-            if not os.path.exists(out_path):
-                score.write('midi', fp=out_path)
-                exported_mozart += 1
-        except Exception as e:
-            continue
-    print(f"  Exported {exported_mozart} Mozart pieces")
+    # ---- BACH ----
+    # Bach chorales are small and parse quickly
+    print("\nBach — exporting chorales (these are fast)...")
+    bach_works = corpus.getComposer('bach')
+    count = 0
+    for path in sorted(bach_works)[:50]:
+        filename = Path(str(path)).stem.replace(' ', '_')
+        out_path = f'data/midi/bach/{filename}.mid'
+        if not os.path.exists(out_path):
+            if safe_export(path, out_path, timeout_sec=15):
+                count += 1
+                print(f"    [{count}] {filename}")
+    print(f"  Exported {count} Bach pieces")
+    total += count
     
-    # Beethoven
-    print("\nExporting Beethoven pieces from music21 corpus...")
-    beethoven_pieces = corpus.getComposer('beethoven')
-    exported_beethoven = 0
-    for path in beethoven_pieces[:50]:
-        try:
-            score = corpus.parse(path)
-            filename = Path(path).stem.replace(' ', '_')
-            out_path = f'data/midi/beethoven/{filename}.mid'
-            if not os.path.exists(out_path):
-                score.write('midi', fp=out_path)
-                exported_beethoven += 1
-        except Exception as e:
-            continue
-    print(f"  Exported {exported_beethoven} Beethoven pieces")
+    # ---- MOZART ----
+    print("\nMozart — exporting available pieces...")
+    mozart_works = corpus.getComposer('mozart')
+    count = 0
+    for path in sorted(mozart_works):
+        filename = Path(str(path)).stem.replace(' ', '_')
+        parent = Path(str(path)).parent.stem
+        safe_name = f"{parent}_{filename}"
+        out_path = f'data/midi/mozart/{safe_name}.mid'
+        if not os.path.exists(out_path):
+            if safe_export(path, out_path, timeout_sec=30):
+                count += 1
+                print(f"    [{count}] {safe_name}")
+    print(f"  Exported {count} Mozart pieces")
+    total += count
     
-    return exported_bach + exported_mozart + exported_beethoven
+    # ---- BEETHOVEN ----
+    # These are string quartets — large and slow. Only grab a few.
+    print("\nBeethoven — exporting (limited, these are large quartet scores)...")
+    beethoven_works = corpus.getComposer('beethoven')
+    count = 0
+    for path in sorted(beethoven_works)[:10]:
+        filename = Path(str(path)).stem.replace(' ', '_')
+        parent = Path(str(path)).parent.stem
+        safe_name = f"{parent}_{filename}"
+        out_path = f'data/midi/beethoven/{safe_name}.mid'
+        if not os.path.exists(out_path):
+            if safe_export(path, out_path, timeout_sec=45):
+                count += 1
+                print(f"    [{count}] {safe_name}")
+    print(f"  Exported {count} Beethoven pieces")
+    total += count
+    
+    return total
 
 
 def main():
@@ -110,36 +138,53 @@ def main():
     print("  MUSICAL DNA — Data Setup")
     print("=" * 60)
     
-    # Step 1: Create directories
     print("\n1. Creating directory structure...")
     create_directory_structure()
     
-    # Step 2: Export from corpus
     print("\n2. Exporting pieces from music21 corpus...")
+    print("   (This should take 2-5 minutes)")
     total = export_corpus_pieces()
     
-    # Step 3: Summary
     print("\n" + "=" * 60)
-    print(f"  Setup complete! Exported {total} pieces total.")
+    print(f"  Done! Exported {total} pieces from the built-in corpus.")
     print("=" * 60)
     
-    print("\n  Your data/midi/ directory now has starter MIDI files for")
-    print("  Bach, Mozart, and Beethoven from the music21 built-in corpus.")
-    
-    print("\n  TO DO: Download additional MIDI files for all 6 composers")
-    print("  from these sources:")
-    print("    - Lakh MIDI Dataset: https://colinraffel.com/projects/lmd/")
-    print("    - IMSLP:             https://imslp.org/")
-    print("    - MuseScore:         https://musescore.com/")
-    print("    - KernScores:        https://kern.humdrum.org/")
-    
-    print(f"\n  Target: 30-50 MIDI files per composer (piano works only)")
-    print(f"\n  Especially needed:")
-    print(f"    data/midi/chopin/       — Download from IMSLP or MuseScore")
-    print(f"    data/midi/debussy/      — Download from IMSLP or MuseScore")
-    print(f"    data/midi/rachmaninoff/ — Download from IMSLP or MuseScore")
-    
-    print(f"\n  Once you have files, run: python src/batch_extract.py")
+    print("""
+  The music21 corpus gives you a HEAD START, but it's not enough.
+  You need 30-50 piano MIDI files per composer. Here's where to
+  get the rest:
+
+  PRIORITY DOWNLOADS (do this today):
+
+  Chopin (you have 0 — need 30-40):
+    musescore.com — search "Chopin" and export as MIDI
+    imslp.org/wiki/Category:Chopin,_Frederic
+    Good pieces: Nocturnes, Preludes, Etudes, Waltzes
+    Save to: data/midi/chopin/
+  
+  Debussy (you have 0 — need 25-35):
+    musescore.com — search "Debussy piano"
+    imslp.org/wiki/Category:Debussy,_Claude
+    Good pieces: Preludes, Arabesques, Suite bergamasque
+    Save to: data/midi/debussy/
+  
+  Rachmaninoff (you have 0 — need 20-30):
+    musescore.com — search "Rachmaninoff"
+    imslp.org/wiki/Category:Rachmaninoff,_Sergei
+    Good pieces: Preludes, Etudes-Tableaux, Moments Musicaux
+    Save to: data/midi/rachmaninoff/
+  
+  MORE Bach/Mozart/Beethoven piano works:
+    Search for piano sonatas, variations, and solo keyboard works
+    The corpus mostly has chorales (Bach) and quartets (Beethoven)
+    You want PIANO works for consistency
+
+  IMPORTANT: Only download piano/solo keyboard pieces for now.
+  Orchestral MIDI files have inconsistent instrument mapping.
+
+  Once you have 30+ files per composer, run:
+    python src/batch_extract.py
+""")
 
 
 if __name__ == '__main__':
