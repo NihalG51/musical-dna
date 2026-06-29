@@ -25,14 +25,34 @@ from .features import load_midi, get_notes
 # INTERNAL HELPERS
 # =============================================================================
 
+def _get_melody_notes(score):
+    """Return notes from the highest-pitched part only.
+
+    Piano Solo MIDIs from MuseScore have two parts (right hand / left hand).
+    Flattening both pollutes melodic features with accompaniment pitches.
+    Picking the part with the highest average pitch reliably isolates the
+    melody line without hardcoding Part 0.
+    """
+    parts = score.parts
+    if not parts:
+        return get_notes(score)
+
+    def avg_pitch(part):
+        notes = [n for n in part.flatten().notes if n.isNote]
+        return sum(n.pitch.midi for n in notes) / len(notes) if notes else 0
+
+    melody_part = max(parts, key=avg_pitch)
+    return [n for n in melody_part.flatten().notes if n.isNote]
+
+
 def _get_pitch_sequence(score):
-    notes = get_notes(score)
+    notes = _get_melody_notes(score)
     return [n.pitch.midi for n in notes]
 
 
 def _get_ioi_sequence(score, max_len=500):
     """Inter-onset intervals (in quarter-note beats), truncated for DTW speed."""
-    notes = get_notes(score)
+    notes = _get_melody_notes(score)
     if not notes:
         return np.array([])
     onsets = np.array([float(n.offset) for n in notes[:max_len]])
