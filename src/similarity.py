@@ -25,29 +25,61 @@ from .features import load_midi, get_notes
 # INTERNAL HELPERS
 # =============================================================================
 
-def _get_melody_notes(score):
-    """Return notes from the highest-pitched part only.
+def _get_melody_notes(score, top_pct=0.30):
+    """Return the top-pitched notes as a melody proxy.
 
-    Piano Solo MIDIs from MuseScore have two parts (right hand / left hand).
-    Flattening both pollutes melodic features with accompaniment pitches.
-    Picking the part with the highest average pitch reliably isolates the
-    melody line without hardcoding Part 0.
+    Basic Pitch outputs single-track MIDI from full-band audio, so
+    part-based separation doesn't apply. Instead, take the top `top_pct`
+    fraction of notes by pitch — in a full-band mix the melody typically
+    sits above the accompaniment in pitch space.
+
+    For multi-part scores (e.g. Piano Solo MIDIs), picks the highest-pitch
+    part first, then applies the top-pct filter within that part.
     """
     parts = score.parts
-    if not parts:
-        return get_notes(score)
+    if len(parts) > 1:
+        def avg_pitch(part):
+            notes = [n for n in part.flatten().notes if n.isNote]
+            return sum(n.pitch.midi for n in notes) / len(notes) if notes else 0
+        source = max(parts, key=avg_pitch)
+        all_notes = [n for n in source.flatten().notes if n.isNote]
+    else:
+        all_notes = get_notes(score)
 
-    def avg_pitch(part):
-        notes = [n for n in part.flatten().notes if n.isNote]
-        return sum(n.pitch.midi for n in notes) / len(notes) if notes else 0
+    if not all_notes:
+        return []
 
-    melody_part = max(parts, key=avg_pitch)
-    return [n for n in melody_part.flatten().notes if n.isNote]
+    # Keep only the top top_pct by pitch, sorted by onset time
+    cutoff = int(len(all_notes) * (1 - top_pct))
+    by_pitch = sorted(all_notes, key=lambda n: n.pitch.midi)
+    top_notes = set(id(n) for n in by_pitch[cutoff:])
+    return sorted([n for n in all_notes if id(n) in top_notes],
+                  key=lambda n: n.offset)
+
+
+MELODY_SAMPLE = 200   # max notes used for melodic/n-gram comparison
 
 
 def _get_pitch_sequence(score):
     notes = _get_melody_notes(score)
+    # Evenly sample to MELODY_SAMPLE notes so dense files don't dominate
+    if len(notes) > MELODY_SAMPLE:
+        step = len(notes) / MELODY_SAMPLE
+        notes = [notes[int(i * step)] for i in range(MELODY_SAMPLE)]
     return [n.pitch.midi for n in notes]
+
+
+def _get_interval_sequence(score):
+    """Convert pitch sequence to melodic interval sequence (semitone differences).
+
+    Key-independent: the same melody in any transposition produces identical
+    intervals. E.g. 'He's So Fine' in F and 'My Sweet Lord' in E both yield
+    the same [+2, +2, +3, ...] pattern for their shared hook.
+    """
+    pitches = _get_pitch_sequence(score)
+    if len(pitches) < 2:
+        return []
+    return [pitches[i + 1] - pitches[i] for i in range(len(pitches) - 1)]
 
 
 def _get_ioi_sequence(score, max_len=500):
@@ -97,19 +129,20 @@ def _safe_pairwise(func, *args):
 # =============================================================================
 
 def melodic_similarity(score1, score2):
-    """Feature 1: Normalized sequence match on MIDI pitch sequences.
+    """Feature 1: Normalized sequence match on melodic interval sequences.
 
-    Uses SequenceMatcher ratio = 2*M/T (M = matching elements, T = total).
-    Captures shared melodic runs and passages, not just interval patterns.
+    Compares semitone-difference sequences rather than absolute pitches so
+    the same melody in different keys scores as similar (key-independent).
+    Uses SequenceMatcher ratio = 2*M/T.
 
     Returns:
         float: similarity in [0, 1]
     """
-    p1 = _get_pitch_sequence(score1)
-    p2 = _get_pitch_sequence(score2)
-    if not p1 or not p2:
+    i1 = _get_interval_sequence(score1)
+    i2 = _get_interval_sequence(score2)
+    if not i1 or not i2:
         return 0.0
-    return SequenceMatcher(None, p1, p2).ratio()
+    return SequenceMatcher(None, i1, i2).ratio()
 
 
 def harmonic_cosine_sim(score1, score2):
@@ -149,33 +182,35 @@ def rhythmic_dtw_sim(score1, score2, max_len=300):
     if len(ioi1) == 0 or len(ioi2) == 0:
         return 0.0
     dist = _dtw_distance(ioi1, ioi2)
-    # Normalize by average sequence length × max possible IOI difference
-    avg_len = (len(ioi1) + len(ioi2)) / 2
-    max_ioi = max(ioi1.max(), ioi2.max()) if avg_len > 0 else 1.0
-    normalized = dist / (avg_len * max_ioi) if avg_len * max_ioi > 0 else 0.0
-    return max(0.0, 1.0 - normalized)
+    # Normalize by avg_len × mean_ioi (typical step cost).
+    # mean_ioi is a much tighter reference than max_ioi, spreading scores
+    # across the full [0,1] range instead of compressing them to ~0.95.
+    avg_len  = (len(ioi1) + len(ioi2)) / 2
+    mean_ioi = (ioi1.mean() + ioi2.mean()) / 2 if avg_len > 0 else 1.0
+    normalizer = avg_len * mean_ioi if avg_len * mean_ioi > 0 else 1.0
+    return max(0.0, 1.0 - dist / normalizer)
 
 
 def ngram_overlap(score1, score2, n=4):
-    """Feature 4: Jaccard index of n-note melodic n-grams.
+    """Feature 4: Jaccard index of n-interval melodic n-grams.
 
-    Extracts all n-length subsequences of MIDI pitches from each piece
-    and computes intersection / union (Jaccard index).
-    Captures shared melodic phrases independent of order or position.
+    Extracts all n-length subsequences of melodic *intervals* (semitone
+    differences) and computes intersection / union (Jaccard index).
+    Key-independent: the same melodic phrase in any transposition matches.
 
     Returns:
         float: Jaccard similarity in [0, 1]
     """
-    p1 = _get_pitch_sequence(score1)
-    p2 = _get_pitch_sequence(score2)
-    if len(p1) < n or len(p2) < n:
+    i1 = _get_interval_sequence(score1)
+    i2 = _get_interval_sequence(score2)
+    if len(i1) < n or len(i2) < n:
         return 0.0
 
     def make_ngrams(seq):
         return set(tuple(seq[i:i + n]) for i in range(len(seq) - n + 1))
 
-    ng1 = make_ngrams(p1)
-    ng2 = make_ngrams(p2)
+    ng1 = make_ngrams(i1)
+    ng2 = make_ngrams(i2)
     union = len(ng1 | ng2)
     return len(ng1 & ng2) / union if union > 0 else 0.0
 
