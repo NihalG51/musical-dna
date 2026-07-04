@@ -45,9 +45,9 @@ Key doctrinal developments relevant to this paper include:
 
 ### 2.2 Computational Music Analysis
 
-Music Information Retrieval (MIR) is the field of extracting meaningful information from musical signals. Prior work includes composer identification (Backer & van Kranenburg, 2005), melodic similarity (Müller et al., 2015), and rhythmic pattern recognition (Honing, 2013). The music21 library (Cuthbert & Ariza, 2010) provides a Python toolkit for symbolic music analysis that forms the technical backbone of this project.
+Music Information Retrieval (MIR) is the field of extracting meaningful information from musical signals. Prior work includes composer identification via pattern recognition on low-level counterpoint features (Backer & van Kranenburg, 2005), melodic similarity (Müller, 2015), and rhythmic pattern recognition (Honing, 2013). The music21 library (Cuthbert & Ariza, 2010) provides a Python toolkit for symbolic music analysis that forms the technical backbone of this project.
 
-Prior applications of computational methods to music copyright are limited. Cronin (2002) argued for quantitative similarity measures in legal proceedings, and Fishman (2018) noted that courts lack tools for distinguishing protectable from unprotectable musical elements. This paper directly addresses that gap by building a system that separates melodic, harmonic, and rhythmic similarity into distinct measurable dimensions.
+Prior applications of computational methods to music copyright are closer in spirit to this paper's Component B than to Component A, and one is a direct predecessor. Cronin (1998) was among the first to formalize concepts of melodic similarity specifically for copyright infringement analysis. More recently, Yuan, Cronin, Müllensiefen, Fujii, and Savage (2023) directly compared human perceptual judgments and automated similarity algorithms against actual court rulings across 40 real music copyright cases, finding that listeners evaluating full audio recordings (roughly 58% accuracy) outperformed both melody-only listening conditions and the automated algorithms tested. That finding — that neither computation nor even careful human listening reliably reproduces court outcomes — anticipates this paper's own result that non-musical case facts, not musical similarity of any kind, are the strongest quantitative predictor of outcome in this dataset (Section 5.4). Fishman (2018) separately noted that courts lack tools for distinguishing protectable from unprotectable musical elements. This paper builds on that line of work by separating melodic, harmonic, and rhythmic similarity into distinct measurable dimensions and testing each against outcome individually, rather than relying on a single composite similarity judgment.
 
 ---
 
@@ -117,7 +117,7 @@ Four similarity metrics are computed for each plaintiff–defendant MIDI pair:
 
 **Harmonic cosine similarity** chordifies each score using music21's built-in harmonic reduction, builds a frequency histogram of chord types (e.g., "major triad," "minor seventh chord"), and computes the cosine similarity of the resulting vectors. This metric is key-independent by design and captures shared harmonic vocabulary regardless of voicing or transposition.
 
-**Rhythmic DTW similarity** applies dynamic time warping to the inter-onset interval (IOI) sequences of both works — the sequence of time gaps between consecutive note onsets, measured in quarter-note beats. DTW allows flexible alignment of rhythmic patterns that may be stretched or compressed. The raw DTW distance is normalized by `avg_sequence_length × mean_IOI`, converting it to a similarity score in [0, 1].
+**Rhythmic DTW similarity** applies dynamic time warping to the inter-onset interval (IOI) sequences of both works — the sequence of time gaps between consecutive note onsets, measured in quarter-note beats. DTW allows flexible alignment of rhythmic patterns that may be stretched or compressed, following the same general approach used for audio-to-MIDI sequence alignment in Raffel (2016). The raw DTW distance is normalized by `avg_sequence_length × mean_IOI`, converting it to a similarity score in [0, 1].
 
 **N-gram overlap** computes the Jaccard index of 4-interval melodic n-grams — all length-4 subsequences of the interval sequence. This captures shared short melodic phrases regardless of their position in the song, and is more robust to polyphonic transcription noise than the sequential match used in melodic similarity.
 
@@ -172,6 +172,12 @@ Per-composer breakdown on the test set:
 
 Bach achieves the highest F1 (97.4%), consistent with his highly distinctive contrapuntal texture. Debussy has the lowest recall (62.5%) — two of his eight test pieces were misclassified, likely because his tonal ambiguity, whole-tone harmonies, and sparse textures produced feature vectors that overlap with Chopin's late Romantic style.
 
+![Confusion matrix for the Random Forest on the 71-piece test set. The only meaningful confusion is Debussy being misclassified as Chopin or Rachmaninoff (2 of 8 pieces), consistent with the recall gap noted above.](../notebooks/plots/05_confusion_matrix.png){width=65%}
+
+Figure 2 visualizes the same separability directly: a t-SNE projection of all 353 pieces (colored by composer, with an X marking each composer's centroid) shows Bach and Mozart forming tight, well-separated clusters on the left, while Chopin, Debussy, and Rachmaninoff — the three Romantic/Impressionist composers whose centroids sit closest together on the right — show more overlap, mirroring the confusion matrix's error pattern.
+
+![t-SNE projection (perplexity=30) of the full 353-piece dataset. Bach's contrapuntal keyboard writing and Mozart's Classical clarity form the most isolated clusters; the three Romantic-era composers cluster more closely together, foreshadowing where the classifier's few errors occur.](../notebooks/plots/08_tsne.png){width=85%}
+
 ### 5.2 Feature Importance Analysis
 
 The ten most predictive features from the Random Forest, ranked by mean decrease in impurity:
@@ -190,6 +196,8 @@ The ten most predictive features from the Random Forest, ranked by mean decrease
 | 10 | rest_ratio | 0.045 | Mozart's clean phrasing with rests vs. Chopin's continuous flow |
 
 These results align well with established music theory. That pitch range is the single most predictive feature reflects Bach's wide-spanned counterpoint across multiple voices, which stands in stark contrast to the more compressed melodic ranges of the Romantics. Key stability as the fourth feature validates the long-held musicological observation that Debussy's impressionist language deliberately undermines tonal certainty.
+
+![Top 10 features ranked by mean decrease in impurity. Pitch range alone accounts for more than twice the importance of the second-ranked feature (note density), making it by a wide margin the single most useful measurement for distinguishing these six composers.](../notebooks/plots/06_feature_importance.png){width=85%}
 
 ### 5.3 AI Music Generalization Test
 
@@ -225,6 +233,8 @@ The headline result is unambiguous: non-musical factors alone predict case outco
 | harmonic_overlap_score | −0.008 | 0.99 |
 
 Plaintiff fame is the single strongest predictor in the combined model — a one-standard-deviation increase in plaintiff fame is associated with 2.64× higher odds of an infringement finding, holding everything else constant. This is close to the blueprint's own predicted "surprising finding" (that plaintiff fame might predict outcomes better than melodic similarity) and is borne out cleanly: melodic similarity's coefficient (+0.228) is less than a quarter the size of plaintiff fame's. All four musical-similarity coefficients are small relative to the two strongest non-musical ones.
+
+![Standardized coefficients from the combined (8-feature) logistic regression, fit on all 33 scored cases. The two largest-magnitude coefficients (plaintiff_fame, expert_testimony) are both non-musical; all four musical-similarity coefficients (bottom of the chart) are comparatively small.](../notebooks/plots/07_case_model_coefficients.png){width=80%}
 
 **A methodological note on a leakage artifact.** An earlier version of this analysis included case settlement status as a fifth non-musical feature and produced an AUC of 0.97 — a number that would have made a dramatic headline. It does not appear in Table 5.4a because it was leakage, not a finding: every settled case in this dataset has outcome coded as 1 by definition, since a settlement produces no independent ruling to measure the actual musical merits against. The feature was excluded once this was discovered (Section 4.4), and the corrected numbers above are what should be cited from this analysis going forward.
 
@@ -290,6 +300,8 @@ The feature importance analysis offers specific, testable answers to the questio
 - **Rachmaninoff** is defined by large chord vocabulary (chromatic late-Romantic harmony) and high note density (thick textures)
 - **Mozart** is defined by high rest ratio (clear phrase endings) and moderate key stability (Classical tonal clarity with occasional dramatic modulations)
 
+![All six composer "fingerprints" overlaid on the top 8 Random Forest features, each normalized 0–1 across the dataset. Debussy's extreme pitch_range and modulation_frequency values, and Bach and Chopin's shared extremes on key_stability and leap_ratio, are visible at a glance — the same features driving both the importance ranking (Figure 3) and the classifier's few confusions (Figure 1).](../notebooks/plots/07b_style_fingerprints_overlay.png){width=70%}
+
 The fact that these computational findings align with what music theorists have long observed through analysis is validating — it suggests the features are capturing genuine musical structure rather than statistical artifacts of the dataset.
 
 ### 6.3 Limitations
@@ -326,11 +338,15 @@ The central finding of this analysis is that computational similarity and legal 
 
 Arnstein v. Porter, 154 F.2d 464 (2d Cir. 1946).
 
+Backer, E., & van Kranenburg, P. (2005). On Musical Stylometry — A Pattern Recognition Approach. *Pattern Recognition Letters*, 26(3), 299–309.
+
 Bright Tunes Music Corp. v. Harrisongs Music, Ltd., 420 F. Supp. 177 (S.D.N.Y. 1976).
 
 Bridgeport Music, Inc. v. Dimension Films, 410 F.3d 792 (6th Cir. 2005).
 
 Bitteur, R., Gardner, M., Gu, R., Seetharaman, P., & Bello, J. P. (2022). Basic Pitch: A Lightweight Yet Powerful Audio-to-MIDI Transcription Model. *ICASSP 2022*.
+
+Cronin, C. (1998). Concepts of Melodic Similarity in Music-Copyright Infringement Suits. In W. B. Hewlett & E. Selfridge-Field (Eds.), *Computing in Musicology 11* (pp. 187–209). MIT Press.
 
 Cuthbert, M. S., & Ariza, C. (2010). music21: A Toolkit for Computer-Aided Musicology and Symbolic Music Data. *ISMIR 2010*.
 
@@ -355,3 +371,5 @@ Swirsky v. Carey, 376 F.3d 841 (9th Cir. 2004).
 VMG Salsoul, LLC v. Ciccone, 824 F.3d 871 (9th Cir. 2016).
 
 Williams v. Gaye, 895 F.3d 1106 (9th Cir. 2018).
+
+Yuan, Y., Cronin, C., Müllensiefen, D., Fujii, S., & Savage, P. E. (2023). Perceptual and Automated Estimates of Infringement in 40 Music Copyright Cases. *Transactions of the International Society for Music Information Retrieval*, 6(1), 117–134.
