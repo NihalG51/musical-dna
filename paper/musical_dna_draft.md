@@ -1,6 +1,6 @@
 # Musical DNA: Computational Fingerprinting of Compositional Style and Its Application to Music Copyright Analysis
 
-**Nihal Prasad**  
+**Nihal**  
 Independent Research Project, Summer 2026
 
 ---
