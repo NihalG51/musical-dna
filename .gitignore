@@ -28,5 +28,6 @@ Thumbs.db
 models/*.pkl
 paper/
 
-# Private planning / local working notes (never publish)
+# Local-only working notes (not published)
 private/
+Musical_DNA_Blueprint.md
