@@ -1,9 +1,15 @@
-# Musical DNA: Computational Fingerprinting of Compositional Style and Its Application to Music Copyright Analysis
-
-**Nihal**  
-Independent Research Project, Summer 2026
-
 ---
+title: "Musical DNA: Computational Fingerprinting of Compositional Style and Its Application to Music Copyright Analysis"
+author: "Nihal"
+date: "Independent Research Project, Summer 2026"
+---
+
+```{=typst}
+// Keep every heading with the content that follows it, so a heading never
+// ends up orphaned at the bottom of a page.
+#show heading: set block(sticky: true)
+#pagebreak()
+```
 
 ## Abstract
 
@@ -178,6 +184,10 @@ Figure 2 shows the same separability directly. A t-SNE projection of all 353 pie
 
 ![t-SNE projection (perplexity=30) of the full 353-piece dataset. Bach's contrapuntal keyboard writing and Mozart's Classical clarity form the most isolated clusters; the three Romantic-era composers cluster more closely together, foreshadowing where the classifier's few errors occur.](../notebooks/plots/08_tsne.png){width=85%}
 
+```{=typst}
+#pagebreak(weak: true)
+```
+
 ### 5.2 Feature Importance Analysis
 
 The ten most predictive features from the Random Forest, ranked by mean decrease in impurity:
@@ -332,7 +342,9 @@ Five outlier cases, where computed similarity most diverges from the actual ruli
 
 The central finding is that computational similarity and legal liability measure related but distinct things, and that, at least across the cases collected here, the gap between them is better explained by who is litigating than by what the music sounds like. Legal doctrine applies a protectability and access filter on top of similarity that no acoustic measurement can replicate, and non-musical facts about the parties explain more of the variance in outcomes than any musical measurement tested. Mapping exactly where and why individual cases depart from that pattern, as the five case studies begin to do, is the direction I intend to take this project as the dataset and methods grow.
 
----
+```{=typst}
+#pagebreak()
+```
 
 ## References
 
