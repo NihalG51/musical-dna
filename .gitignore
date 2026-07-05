@@ -27,3 +27,6 @@ Thumbs.db
 # Models
 models/*.pkl
 paper/
+
+# Private planning / local working notes (never publish)
+private/
