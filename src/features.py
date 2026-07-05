@@ -16,7 +16,7 @@ Author: Nihal
 
 import numpy as np
 from collections import Counter
-from music21 import converter, analysis, pitch, interval, key
+from music21 import converter, roman, pitch, interval, key
 
 
 # =============================================================================
@@ -334,14 +334,24 @@ def tonal_gravity(score):
         cadential_count = 0
         for i in range(1, len(chord_list)):
             try:
-                rn_prev = analysis.roman.romanNumeralFromChord(chord_list[i-1], k)
-                rn_curr = analysis.roman.romanNumeralFromChord(chord_list[i], k)
+                rn_prev = roman.romanNumeralFromChord(chord_list[i-1], k)
+                rn_curr = roman.romanNumeralFromChord(chord_list[i], k)
                 
                 prev_fig = rn_prev.romanNumeralAlone
                 curr_fig = rn_curr.romanNumeralAlone
-                
-                # V→I or viio→I progressions
-                if curr_fig == 'I' and prev_fig in ('V', 'viio', 'vii'):
+
+                # Authentic (V→I) or leading-tone (viio→I) cadence, in major
+                # OR minor keys. romanNumeralAlone strips inversion/quality
+                # figures, so the tonic appears as 'I' in major and 'i' in
+                # minor, the dominant as 'V'/'v', and the diminished
+                # leading-tone chord as lowercase 'vii' (uppercase 'VII' is the
+                # subtonic bVII — not a cadence, so it's excluded by matching
+                # 'vii' case-sensitively). Normalizing case on the tonic and
+                # dominant is essential: without it, every minor-key cadence
+                # (tonic = 'i') is silently missed.
+                is_tonic = curr_fig.upper() == 'I'
+                is_dominant = prev_fig.upper() == 'V' or prev_fig == 'vii'
+                if is_tonic and is_dominant:
                     cadential_count += 1
             except Exception:
                 continue

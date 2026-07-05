@@ -15,14 +15,26 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from music21 import corpus
+import math
+
+from music21 import corpus, stream, note
 from src.features import (
     load_midi, get_notes,
     pitch_range, average_pitch, pitch_class_entropy,
-    leap_ratio, melodic_contour,
+    leap_ratio, melodic_contour, tonal_gravity,
     key_stability, note_density,
     extract_features, FEATURE_NAMES
 )
+from src.similarity import melodic_similarity, rhythmic_dtw_sim, ngram_overlap
+
+# Features whose docstrings promise a value in [0, 1]. Verified in-range on the
+# corpus sample. (rest_ratio is deliberately NOT here — it can exceed 1.0 for
+# multi-part scores, a known separate issue; add it once that's fixed.)
+RANGE_01_FEATURES = [
+    'pitch_class_entropy', 'leap_ratio', 'melodic_contour',
+    'dissonance_ratio', 'syncopation_index', 'rhythmic_entropy',
+    'repetition_ratio',
+]
 
 
 def test_environment():
@@ -169,6 +181,95 @@ def test_dataframe_output(bach, mozart):
     return True
 
 
+def _score_from_pitches(midi_pitches):
+    """Build a minimal single-part Score from a list of MIDI pitch numbers,
+    one note per quarter beat. Used for similarity-engine unit tests."""
+    sc = stream.Score()
+    part = stream.Part()
+    for i, m in enumerate(midi_pitches):
+        part.insert(float(i), note.Note(midi=m))
+    sc.insert(0, part)
+    return sc
+
+
+def test_feature_correctness(pieces):
+    """Assertion-based correctness checks (these actually FAIL on regression,
+    unlike the informational prints above).
+
+    Covers the exact class of bug that shipped silently: a feature that always
+    returns the same value because its computation is broken but swallowed by a
+    try/except.
+    """
+    print("\nTesting feature correctness (assertions)...")
+
+    # Every feature must be present, numeric, and finite for every piece.
+    for name, sc in pieces:
+        feats = extract_features(sc)
+        for fname in FEATURE_NAMES:
+            assert fname in feats, f"{fname} missing for {name}"
+            val = feats[fname]
+            assert isinstance(val, (int, float)), f"{fname} non-numeric for {name}: {val!r}"
+            assert math.isfinite(val), f"{fname} not finite for {name}: {val!r}"
+        # Documented [0,1] features must stay in range.
+        for fname in RANGE_01_FEATURES:
+            val = feats[fname]
+            assert -1e-9 <= val <= 1 + 1e-9, \
+                f"{fname} out of [0,1] range for {name}: {val}"
+    print(f"  OK  all {len(FEATURE_NAMES)} features present, numeric, finite "
+          f"across {len(pieces)} pieces")
+    print(f"  OK  {len(RANGE_01_FEATURES)} documented [0,1] features stay in range")
+
+    # Regression guard for the tonal_gravity bug: it was silently always 0.0
+    # (wrong module path + case-sensitive tonic check missing minor keys).
+    # A Bach chorale is densely cadential, so this MUST be > 0.
+    tg_values = [tonal_gravity(sc) for _, sc in pieces]
+    bach_tg = tonal_gravity(pieces[0][1])
+    assert bach_tg > 0, (
+        f"tonal_gravity is {bach_tg} for a Bach chorale — expected > 0. "
+        "This is the silent-constant regression; check the music21.roman import "
+        "and the major/minor tonic handling in features.tonal_gravity()."
+    )
+    assert max(tg_values) > 0, "tonal_gravity is 0 for every sampled piece (dead feature)"
+    print(f"  OK  tonal_gravity is live and cadence-sensitive "
+          f"(Bach chorale = {bach_tg:.3f}, not 0)")
+    return True
+
+
+def test_similarity_engine():
+    """Assertion-based checks on the Component B pairwise metrics — previously
+    untested entirely."""
+    print("\nTesting similarity engine (assertions)...")
+
+    melody = _score_from_pitches([60, 62, 64, 65, 67, 65, 64, 62])
+    empty = stream.Score()
+    empty.insert(0, stream.Part())
+
+    # Identity: a piece is maximally similar to itself.
+    assert abs(melodic_similarity(melody, melody) - 1.0) < 1e-9, \
+        "melodic_similarity(x, x) should be 1.0"
+    assert abs(rhythmic_dtw_sim(melody, melody) - 1.0) < 1e-9, \
+        "rhythmic_dtw_sim(x, x) should be 1.0"
+
+    # Empty input must degrade to 0, not crash.
+    assert melodic_similarity(melody, empty) == 0.0, \
+        "melodic_similarity(x, empty) should be 0.0"
+    assert rhythmic_dtw_sim(melody, empty) == 0.0, \
+        "rhythmic_dtw_sim(x, empty) should be 0.0"
+
+    # n-gram with a sequence shorter than n must be 0, not error.
+    two_notes = _score_from_pitches([60, 62])
+    assert ngram_overlap(two_notes, two_notes, 4) == 0.0, \
+        "ngram_overlap on a too-short sequence should be 0.0"
+
+    # A clearly different melody should score below a self-match.
+    other = _score_from_pitches([72, 60, 71, 61, 70, 62, 69, 63])
+    assert melodic_similarity(melody, other) < 1.0, \
+        "two different melodies should not score 1.0"
+
+    print("  OK  identity=1.0, empty=0.0, short-ngram=0.0, distinct<1.0")
+    return True
+
+
 def midi_to_note(midi_num):
     """Convert MIDI note number to approximate note name."""
     from music21 import pitch as m21pitch
@@ -192,15 +293,31 @@ def main():
     # Step 2: Load test pieces
     bach, mozart = test_corpus_loading()
     
-    # Step 3: Test Week 1 features
+    # Step 3: Test Week 1 features (informational prints)
     test_week1_features(bach, mozart)
-    
+
     # Step 4: Test full pipeline
     test_full_pipeline(bach)
-    
+
     # Step 5: Test DataFrame output
     test_dataframe_output(bach, mozart)
-    
+
+    # Step 6: Assertion-based correctness tests — these can actually FAIL.
+    try:
+        pieces = [
+            ('bach/bwv66.6', bach),
+            ('bach/bwv7.7', corpus.parse('bach/bwv7.7')),
+            ('mozart/k545', mozart),
+        ]
+        test_feature_correctness(pieces)
+        test_similarity_engine()
+    except AssertionError as e:
+        print("\n" + "=" * 60)
+        print("  TEST FAILED")
+        print("=" * 60)
+        print(f"\n  {e}")
+        sys.exit(1)
+
     print("\n" + "=" * 60)
     print("  ALL TESTS PASSED — Your environment is ready!")
     print("=" * 60)
