@@ -1,21 +1,21 @@
 # Musical DNA: Computational Fingerprinting of Compositional Style & Copyright Law
 
-An interdisciplinary research project combining machine learning, music theory, and legal analysis. Component A computationally identifies what makes each classical composer's style unique. Component B applies those same tools to real music copyright disputes, asking whether courts' rulings track measurable musical similarity — or something else entirely.
+An interdisciplinary research project combining machine learning, music theory, and legal analysis. Component A computationally identifies what makes each classical composer's style unique. Component B applies those same tools to real music copyright disputes, asking whether courts' rulings track measurable musical similarity or something else entirely.
 
-The full writeup — methodology, results, five detailed case studies, and limitations — is in [`paper/musical_dna_draft.pdf`](paper/musical_dna_draft.pdf). A general-audience summary is in [`blog/musical_dna_blog_post.md`](blog/musical_dna_blog_post.md).
+The full writeup (methodology, results, five detailed case studies, and limitations) is in [`paper/musical_dna_draft.pdf`](paper/musical_dna_draft.pdf). A general-audience summary is in [`blog/musical_dna_blog_post.md`](blog/musical_dna_blog_post.md).
 
 ## Project Overview
 
-**Component A — Style Fingerprinting Engine:** A Random Forest classifier trained on 353 MIDI files from six classical composers (Bach, Beethoven, Chopin, Debussy, Mozart, Rachmaninoff), extracting 21 features across melodic, harmonic, rhythmic, and structural dimensions. Achieves **93.0% test accuracy** on six-composer classification. Applying the classifier to AI-generated music revealed a genre-bias limitation: a Carnatic classical piece (an Indian classical tradition unrelated to European composition) was confidently misclassified as Bach.
+**Component A, Style Fingerprinting Engine:** A Random Forest classifier trained on 353 MIDI files from six classical composers (Bach, Beethoven, Chopin, Debussy, Mozart, Rachmaninoff), extracting 21 features across melodic, harmonic, rhythmic, and structural dimensions. It reaches **88.7% test accuracy** on six-composer classification (an SVM edges it at 91.5%, but the Random Forest is kept as the primary model because it provides the feature importances the analysis and dashboard rely on). Applying the classifier to AI-generated music revealed a genre-bias limitation: a Carnatic classical piece (an Indian classical tradition unrelated to European composition) was confidently misclassified as Bach.
 
-**Component B — Copyright Case Predictor:** A hand-curated dataset of 43 real music copyright cases (1946–2023), 33 of which are scored with computed melodic/harmonic/rhythmic/n-gram similarity between the plaintiff's and defendant's work. A logistic regression model finds that **non-musical case factors — plaintiff fame, defendant commercial success, expert testimony, litigation forum — predict outcomes far better than musical similarity alone** (AUC 0.86 vs. 0.39 under cross-validation), with plaintiff fame the single strongest predictor. Five outlier cases are analyzed in depth, including a synthesis where Component A's classical-composer engine is applied directly to disputed pop/rock recordings as an independent check.
+**Component B, Copyright Case Predictor:** A hand-curated dataset of 43 real music copyright cases (1946–2023), 33 of which are scored with computed melodic/harmonic/rhythmic/n-gram similarity between the plaintiff's and defendant's work. A logistic regression model finds that **non-musical case factors (plaintiff fame, defendant commercial success, expert testimony, litigation forum) predict outcomes far better than musical similarity alone** (AUC 0.86 vs. 0.39 under cross-validation), with plaintiff fame the single strongest predictor. Five outlier cases are analyzed in depth, including a synthesis where Component A's classical-composer engine is applied directly to disputed pop/rock recordings as an independent check.
 
 ## Repository Structure
 
 ```
 musical-dna/
 ├── data/
-│   ├── midi/                  # MIDI files (gitignored — composer + copyright-case audio)
+│   ├── midi/                  # MIDI files (gitignored: composer + copyright-case audio)
 │   ├── processed/              # Extracted feature matrices (CSV, gitignored)
 │   └── copyright_cases/
 │       └── cases.csv           # The 43-case copyright dataset
@@ -40,7 +40,7 @@ musical-dna/
 │   ├── 05_score_pair.py          # Auto-scores copyright case pairs
 │   ├── 06_model_cases.py         # Logistic regression model (Week 6)
 │   └── 07_outlier_analysis.py    # Outlier case studies + Component A/B synthesis (Week 7)
-├── dashboard/                    # Streamlit app — 4 interactive tabs
+├── dashboard/                    # Streamlit app, 4 interactive tabs
 │   ├── app.py
 │   ├── tab_style_explorer.py     # Composer radar chart + feature breakdown
 │   ├── tab_classifier.py         # Upload a MIDI file, get a predicted composer
@@ -78,30 +78,30 @@ python tests/test_features.py
 streamlit run dashboard/app.py
 ```
 
-Note: `data/midi/` (composer and copyright-case audio) and `data/processed/*.csv` are gitignored due to size and, for the copyright-case audio, copyright considerations — they aren't included in this repository. See `src/setup_data.py` and `scripts/download_audio.py` for how to (re)build them.
+Note: `data/midi/` (composer and copyright-case audio) and `data/processed/*.csv` are gitignored due to size and, for the copyright-case audio, copyright considerations, so they aren't included in this repository. See `src/setup_data.py` and `scripts/download_audio.py` for how to (re)build them.
 
 ## Technology Stack
 
-- **Python 3.11+** — core language
-- **music21** — MIDI parsing and music analysis
-- **scikit-learn** — classifiers, logistic regression, cross-validation
-- **pandas / numpy / scipy** — data manipulation and similarity metrics
-- **matplotlib / seaborn** — visualization
-- **Streamlit** — interactive dashboard
-- **Basic Pitch** (Spotify) — neural audio-to-MIDI transcription for copyright-case recordings
-- **yt-dlp** — audio sourcing for copyright-case recordings
+- **Python 3.11+**, core language
+- **music21**, MIDI parsing and music analysis
+- **scikit-learn**, classifiers, logistic regression, cross-validation
+- **pandas / numpy / scipy**, data manipulation and similarity metrics
+- **matplotlib / seaborn**, visualization
+- **Streamlit**, interactive dashboard
+- **Basic Pitch** (Spotify), neural audio-to-MIDI transcription for copyright-case recordings
+- **yt-dlp**, audio sourcing for copyright-case recordings
 
 ## Research Questions & Findings
 
-1. **Can ML reliably distinguish composers using only computational features from MIDI scores?** Yes — 93.0% accuracy across six composers, with pitch range, note density, and key stability the most predictive features.
-2. **Does this generalize beyond the training distribution?** Not fully — an AI-generated Carnatic classical piece was confidently misclassified as Bach, revealing the model learned "European art music" signatures rather than composer-specific ones.
-3. **Can we predict music copyright case outcomes using quantitative musical features?** Weakly on their own (AUC 0.39, worse than chance) — but combined with non-musical case facts, prediction improves substantially (AUC 0.86 from non-musical facts alone).
-4. **Do court rulings correlate with measurable similarity, or with non-musical factors?** Non-musical factors — plaintiff fame most of all — are the stronger predictor in this dataset. The clearest illustration: *Williams v. Gaye* ("Blurred Lines") has the lowest computed similarity, by two independent measures, of any case examined, despite being the highest-profile infringement verdict in the dataset.
+1. **Can ML reliably distinguish composers using only computational features from MIDI scores?** Yes, at 88.7% accuracy across six composers, with pitch range, key stability, and average pitch the most predictive features.
+2. **Does this generalize beyond the training distribution?** Not fully. An AI-generated Carnatic classical piece was confidently misclassified as Bach, revealing that the model learned "European art music" signatures rather than composer-specific ones.
+3. **Can we predict music copyright case outcomes using quantitative musical features?** Weakly on their own (AUC 0.39, worse than chance), but combined with non-musical case facts, prediction improves substantially (AUC 0.86 from non-musical facts alone).
+4. **Do court rulings correlate with measurable similarity, or with non-musical factors?** Non-musical factors, plaintiff fame most of all, are the stronger predictor in this dataset. The clearest illustration is *Williams v. Gaye* ("Blurred Lines"), which has the lowest computed similarity of any case examined, by two independent measures, despite being the highest-profile infringement verdict in the dataset.
 
 ## Author
 
-**Nihal** — Rising Senior, Summer 2026
+**Nihal**, Rising Senior, Summer 2026
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
