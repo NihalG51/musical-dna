@@ -151,24 +151,37 @@ def main():
     print(f"\n── MODEL COMPARISON ─────────────────────────────────────")
     results, pipelines = run_all_models(X_train, X_test, y_train, y_test)
 
-    best_name = max(results, key=lambda n: results[n]['test_accuracy'])
-    print(f"\n  Best model: {best_name} ({results[best_name]['test_accuracy']:.1%} test accuracy)")
+    top_name = max(results, key=lambda n: results[n]['test_accuracy'])
 
-    print_per_class_report(results[best_name], best_name)
+    # Random Forest is the primary/deployed model, not necessarily the single
+    # highest test-accuracy one. Rationale: its CV accuracy is statistically
+    # tied with the top model, it is the only compared model that yields the
+    # feature importances the analysis and the dashboard's Style Explorer both
+    # rely on, and keeping one interpretable model as the through-line matters
+    # more here than a few percentage points on a 71-piece test split.
+    PRIMARY = 'Random Forest'
+    print(f"\n  Primary (deployed) model: {PRIMARY} "
+          f"({results[PRIMARY]['test_accuracy']:.1%} test accuracy)")
+    if top_name != PRIMARY:
+        print(f"  Note: {top_name} had the highest test accuracy "
+              f"({results[top_name]['test_accuracy']:.1%}) on this split, but does not "
+              f"provide feature importances; {PRIMARY} is retained as primary.")
+
+    print_per_class_report(results[PRIMARY], PRIMARY)
 
     print(f"\n── GENERATING PLOTS ─────────────────────────────────────")
-    plot_confusion_matrix(results[best_name], best_name)
+    plot_confusion_matrix(results[PRIMARY], PRIMARY)
     plot_feature_importance(pipelines['Random Forest'])
 
     print(f"\n── SAVING MODEL ─────────────────────────────────────────")
-    save_model(pipelines[best_name])
-    print(f"  Saved: models/best_classifier.pkl  ({best_name})")
+    save_model(pipelines[PRIMARY])
+    print(f"  Saved: models/best_classifier.pkl  ({PRIMARY})")
 
-    target_met = results[best_name]['test_accuracy'] >= 0.70
+    target_met = results[PRIMARY]['test_accuracy'] >= 0.70
     print(f"\n{'=' * 60}")
     print(f"  WEEK 3 COMPLETE")
     print(f"{'=' * 60}")
-    print(f"\n  Target: 70%+   Result: {results[best_name]['test_accuracy']:.1%}"
+    print(f"\n  Target: 70%+   Result: {results[PRIMARY]['test_accuracy']:.1%}"
           f"   {'✓ TARGET MET' if target_met else '✗ below target — see blueprint risk mitigation'}")
     print(f"\n  Next step: python notebooks/03_style_maps.py")
 

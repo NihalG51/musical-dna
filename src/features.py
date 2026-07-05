@@ -18,6 +18,10 @@ import numpy as np
 from collections import Counter
 from music21 import converter, roman, pitch, interval, key
 
+# Max chords analyzed by tonal_gravity(). Bounds its per-chord roman-numeral
+# analysis on dense performance MIDIs (8000+ chords -> 36s without the cap).
+TONAL_GRAVITY_MAX_CHORDS = 400
+
 
 # =============================================================================
 # UTILITY FUNCTIONS
@@ -327,10 +331,18 @@ def tonal_gravity(score):
         k = score.analyze('key')
         chords_stream = score.chordify()
         chord_list = list(chords_stream.flatten().getElementsByClass('Chord'))
-        
+
+        # Cap the analysis window. romanNumeralFromChord is ~4ms/chord, and
+        # dense performance MIDIs can have 8000+ chords (36s/piece uncapped).
+        # Cadences need consecutive chords, so we take the first N rather than
+        # subsampling; on a large Bach suite this changes the value by <1%
+        # (0.375 vs 0.378 uncapped) while running in <1s. Density is computed
+        # over the capped window so it stays comparable across piece lengths.
+        chord_list = chord_list[:TONAL_GRAVITY_MAX_CHORDS]
+
         if len(chord_list) < 2:
             return 0.0
-        
+
         cadential_count = 0
         for i in range(1, len(chord_list)):
             try:
