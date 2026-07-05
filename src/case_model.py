@@ -11,6 +11,7 @@ leave-one-out) rather than a held-out test set.
 """
 
 import pickle
+import re
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -41,19 +42,30 @@ FEATURE_SETS = {
     'full':        MUSICAL_FEATURES + NON_MUSICAL_FEATURES,
 }
 
-# Jurisdiction values naming a formal US federal court (circuit, district, or
-# the Supreme Court). Everything else (UK/Australia courts, settled pre-suit
-# or out-of-court, "Unknown/Settled...") is treated as 0. Jurisdiction itself
-# has 18 near-unique values across 33 rows — far too sparse to one-hot encode
-# — so this collapses it to the one distinction the research question cares
-# about: did this go through formal US litigation, or not.
-_US_COURT_MARKERS = ('Circuit', 'C.D.', 'N.D.', 'S.D.', 'D.', 'Supreme Court')
+# Collapse the 18 near-unique jurisdiction strings (too sparse to one-hot over
+# 33 rows) to the one distinction the research question cares about: did this
+# go through formal US federal litigation, or not?
+#
+# A non-US marker vetoes the classification outright (so e.g. a hypothetical
+# "UK Supreme Court" is not mistaken for the U.S. Supreme Court). Otherwise we
+# match explicit US-federal-court signatures: a numbered circuit ("9th Circuit",
+# "2d Cir."), a federal district court ("C.D. Cal.", "S.D.N.Y.", "N.D. Cal."),
+# or the U.S. Supreme Court. This is anchored rather than a loose substring
+# scan — an earlier version matched a bare "D." which is dangerously broad.
+_NON_US_MARKERS = ('UK', 'England', 'Wales', 'Australia', 'international')
+_US_COURT_RE = re.compile(
+    r'\b\d+(?:st|nd|rd|th)\s+Cir'      # "9th Circuit", "2d Cir." (numbered circuit)
+    r'|\b[NSEWCM]\.D\.'                # federal district: C.D., S.D., N.D., E.D., M.D.
+    r'|\bSupreme\s+Court\b'            # U.S. Supreme Court (non-US vetoed above)
+)
 
 
 def derive_us_court(jurisdiction):
     if not isinstance(jurisdiction, str):
         return 0
-    return int(any(marker in jurisdiction for marker in _US_COURT_MARKERS))
+    if any(marker in jurisdiction for marker in _NON_US_MARKERS):
+        return 0
+    return int(bool(_US_COURT_RE.search(jurisdiction)))
 
 
 def load_case_features(feature_set='full', csv_path=None):

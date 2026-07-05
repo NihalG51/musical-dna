@@ -1,15 +1,17 @@
 """
 Musical DNA — Feature Extraction Pipeline
 ==========================================
-Extracts 25 musical features from MIDI files for composer classification
-and copyright similarity analysis.
+Extracts 21 per-piece musical features from MIDI files for composer
+classification (Component A).
 
-Features are grouped into 5 categories:
+Features are grouped into 4 categories (see FEATURE_NAMES):
   1. Melodic (6 features)
   2. Harmonic (5 features)
   3. Rhythmic (5 features)
   4. Structural (5 features)
-  5. Pairwise Similarity (4 features) — used in Component B
+
+The 4 pairwise similarity metrics used for copyright analysis (Component B)
+live separately in src/similarity.py.
 
 Author: Nihal
 """
@@ -54,22 +56,6 @@ def get_notes(score):
         List of music21.note.Note objects
     """
     return [n for n in score.flatten().notes if n.isNote]
-
-
-def get_all_notes_and_chords(score):
-    """Extract all Notes and Chords from a score (flattened).
-    
-    Returns individual pitches from chords as well.
-    """
-    flat = score.flatten().notes
-    pitches = []
-    for element in flat:
-        if element.isNote:
-            pitches.append(element)
-        elif element.isChord:
-            for p in element.pitches:
-                pitches.append(p)
-    return pitches
 
 
 # =============================================================================
