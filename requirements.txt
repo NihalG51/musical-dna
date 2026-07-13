@@ -1,23 +1,27 @@
 # Musical DNA - Dependencies
 # Install: pip install -r requirements.txt
 #
-# The ML/data versions below are PINNED so the trained models in models/*.pkl
-# unpickle reliably in a fresh environment (e.g. Streamlit Community Cloud).
-# Deploy with Python 3.11 to match how the models were built.
+# Versions are pinned to a conservative, ABI-consistent stack that runs on
+# Streamlit Community Cloud (Python 3.11). The committed models in models/*.pkl
+# were generated with exactly these versions, so they unpickle without the
+# native/segfault issues that bleeding-edge numpy/pandas builds can cause.
 
 # Music analysis
 music21==9.9.1
 
 # Data science
-pandas==3.0.2
-numpy==2.4.4
-scipy==1.17.1
+pandas==2.2.3
+numpy==1.26.4
+scipy==1.13.1
 
 # Machine learning (must match the version that pickled models/*.pkl)
-scikit-learn==1.8.0
+scikit-learn==1.5.2
+
+# Dataframe serialization (pinned: newer builds have segfaulted on the Cloud)
+pyarrow==17.0.0
 
 # Visualization
-matplotlib>=3.8.0
+matplotlib==3.9.2
 seaborn>=0.13.0
 
 # Dashboard

@@ -12,7 +12,7 @@ def render():
     st.header("Composer Classifier")
     st.write(
         "Upload a solo piano/keyboard MIDI file and the Random Forest classifier "
-        "(93.0% test accuracy on six composers) will estimate which composer's "
+        "(88.7% test accuracy on six composers) will estimate which composer's "
         "style it most resembles. Works best on solo piano MIDI — orchestral or "
         "full-band files will produce noisy, less reliable features."
     )
