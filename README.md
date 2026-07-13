@@ -2,6 +2,8 @@
 
 An interdisciplinary research project combining machine learning, music theory, and legal analysis. Component A computationally identifies what makes each classical composer's style unique. Component B applies those same tools to real music copyright disputes, asking whether courts' rulings track measurable musical similarity or something else entirely.
 
+**🎛️ Live demo:** [musical-dna.streamlit.app](https://musical-dna.streamlit.app) — upload a MIDI to classify its composer, compare two works for similarity, and explore the copyright-case dataset.
+
 The full writeup (methodology, results, five detailed case studies, and limitations) is in [`paper/musical_dna_draft.pdf`](paper/musical_dna_draft.pdf). A general-audience summary is in [`blog/musical_dna_blog_post.md`](blog/musical_dna_blog_post.md).
 
 ## Project Overview
