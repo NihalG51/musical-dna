@@ -14,6 +14,8 @@ venv/
 data/midi/
 data/processed/*.csv
 !data/processed/.gitkeep
+# Feature matrix is small (135K) and needed by the deployed dashboard
+!data/processed/features.csv
 
 # OS
 .DS_Store
@@ -26,6 +28,9 @@ Thumbs.db
 
 # Models
 models/*.pkl
+# Trained models the deployed dashboard needs (small; keep these two)
+!models/best_classifier.pkl
+!models/case_predictor.pkl
 paper/
 
 # Local-only working notes (not published)
