@@ -342,6 +342,16 @@ Five outlier cases, where computed similarity most diverges from the actual ruli
 
 The central finding is that computational similarity and legal liability measure related but distinct things, and that, at least across the cases collected here, the gap between them is better explained by who is litigating than by what the music sounds like. Legal doctrine applies a protectability and access filter on top of similarity that no acoustic measurement can replicate, and non-musical facts about the parties explain more of the variance in outcomes than any musical measurement tested. Mapping exactly where and why individual cases depart from that pattern, as the five case studies begin to do, is the direction I intend to take this project as the dataset and methods grow.
 
+## Data and Code Availability
+
+All source code, the 43-case copyright dataset (case metadata, coded non-musical factors, and computed melodic, harmonic, rhythmic, and n-gram similarity scores), and the extracted 353-piece composer feature matrix are openly available at https://github.com/NihalG51/musical-dna under the MIT license. An interactive dashboard for classifying an uploaded MIDI file, comparing two works, and browsing the case dataset is deployed at https://musical-dna.streamlit.app.
+
+The underlying audio recordings and their MIDI transcriptions are not redistributed, because many are third-party copyrighted works. The manuscript instead documents each data source so the pipeline can be reproduced: composer MIDIs were obtained from the music21 corpus, KernScores, IMSLP, and MuseScore (Section 3.1), and case audio from YouTube (via yt-dlp) or, for works too obscure to appear on commercial platforms, the Music Copyright Infringement Resource at George Washington University Law School (Section 3.2). Transcription used Spotify's Basic Pitch model (Bittner et al., 2022).
+
+## Use of AI Tools
+
+Generative AI tools were used in this project and are disclosed here in the interest of transparency. The AI music generators Suno and Udio produced the "in the style of" test tracks evaluated in the generalization experiment (Section 5.3); these are described as research materials in that section. Separately, large language model assistance was used during background research, software development and debugging of the feature-extraction and similarity pipelines, and the drafting and editing of this manuscript. All quantitative results were produced by the code in the linked repository and were reviewed and verified by the author, who takes full responsibility for the content, analysis, and any errors.
+
 ```{=typst}
 #pagebreak()
 ```
