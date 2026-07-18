@@ -22,6 +22,11 @@ url: "https://musical-dna.streamlit.app"
 license: MIT
 version: "1.0.0"
 date-released: "2026-07-18"
+doi: "10.5281/zenodo.21434183"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21434183"
+    description: "Archived software and dataset (v1.0)"
 keywords:
   - music information retrieval
   - computational musicology

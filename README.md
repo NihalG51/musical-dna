@@ -4,7 +4,7 @@ An interdisciplinary research project combining machine learning, music theory, 
 
 **🎛️ Live demo:** [musical-dna.streamlit.app](https://musical-dna.streamlit.app) — upload a MIDI to classify its composer, compare two works for similarity, and explore the copyright-case dataset.
 
-**📄 Preprint:** [doi.org/10.5281/zenodo.21433890](https://doi.org/10.5281/zenodo.21433890) (CC BY 4.0)
+**📄 Preprint:** [doi.org/10.5281/zenodo.21433890](https://doi.org/10.5281/zenodo.21433890) (paper, CC BY 4.0) · **💻 Code & data:** [doi.org/10.5281/zenodo.21434183](https://doi.org/10.5281/zenodo.21434183) (v1.0, MIT)
 
 The full writeup (methodology, results, five detailed case studies, and limitations) is in [`paper/musical_dna_draft.pdf`](paper/musical_dna_draft.pdf). A general-audience summary is in [`blog/musical_dna_blog_post.md`](blog/musical_dna_blog_post.md).
 
@@ -108,7 +108,11 @@ Note: `data/midi/` (composer and copyright-case audio) and `data/processed/*.csv
 
 ## Citation
 
+**Paper:**
 > Gundluru, N. (2026). *Musical DNA: Computational Fingerprinting of Compositional Style and Its Application to Music Copyright Analysis*. Zenodo. https://doi.org/10.5281/zenodo.21433890
+
+**Software & dataset:**
+> Gundluru, N. (2026). *Musical DNA* (Version 1.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.21434183
 
 ## License
 
