@@ -360,9 +360,9 @@ Generative AI tools were used in this project and are disclosed here in the inte
 
 Arnstein v. Porter, 154 F.2d 464 (2d Cir. 1946).
 
-Backer, E., & van Kranenburg, P. (2005). On Musical Stylometry: A Pattern Recognition Approach. *Pattern Recognition Letters*, 26(3), 299–309.
+Backer, E., & van Kranenburg, P. (2005). On Musical Stylometry: A Pattern Recognition Approach. *Pattern Recognition Letters*, 26(3), 299–309. https://doi.org/10.1016/j.patrec.2004.10.016
 
-Bittner, R. M., Bosch, J. J., Rubinstein, D., Meseguer-Brocal, G., & Ewert, S. (2022). A Lightweight Instrument-Agnostic Model for Polyphonic Note Transcription and Multipitch Estimation. *Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)*.
+Bittner, R. M., Bosch, J. J., Rubinstein, D., Meseguer-Brocal, G., & Ewert, S. (2022). A Lightweight Instrument-Agnostic Model for Polyphonic Note Transcription and Multipitch Estimation. *Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)*. https://doi.org/10.1109/ICASSP43922.2022.9746549
 
 Bridgeport Music, Inc. v. Dimension Films, 410 F.3d 792 (6th Cir. 2005).
 
@@ -376,9 +376,9 @@ Fishman, J. P. (2018). Music as a Matter of Law. *Harvard Law Review*, 131(7), 1
 
 Gray v. Perry, 2020 WL 1275221 (C.D. Cal. 2020).
 
-Honing, H. (2013). Structure and Interpretation of Rhythm in Music. In D. Deutsch (Ed.), *The Psychology of Music* (3rd ed., pp. 369–404). Academic Press.
+Honing, H. (2013). Structure and Interpretation of Rhythm in Music. In D. Deutsch (Ed.), *The Psychology of Music* (3rd ed., pp. 369–404). Academic Press. https://doi.org/10.1016/B978-0-12-381460-9.00009-2
 
-Müller, M. (2015). *Fundamentals of Music Processing: Audio, Analysis, Algorithms, Applications*. Springer.
+Müller, M. (2015). *Fundamentals of Music Processing: Audio, Analysis, Algorithms, Applications*. Springer. https://doi.org/10.1007/978-3-319-21945-5
 
 Raffel, C. (2016). *Learning-Based Methods for Comparing Sequences, with Applications to Audio-to-MIDI Alignment and Matching* (Doctoral dissertation). Columbia University.
 
@@ -394,4 +394,4 @@ VMG Salsoul, LLC v. Ciccone, 824 F.3d 871 (9th Cir. 2016).
 
 Williams v. Gaye, 895 F.3d 1106 (9th Cir. 2018).
 
-Yuan, Y., Cronin, C., Müllensiefen, D., Fujii, S., & Savage, P. E. (2023). Perceptual and Automated Estimates of Infringement in 40 Music Copyright Cases. *Transactions of the International Society for Music Information Retrieval*, 6(1), 117–134.
+Yuan, Y., Cronin, C., Müllensiefen, D., Fujii, S., & Savage, P. E. (2023). Perceptual and Automated Estimates of Infringement in 40 Music Copyright Cases. *Transactions of the International Society for Music Information Retrieval*, 6(1), 117–134. https://doi.org/10.5334/tismir.151
