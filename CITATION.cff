@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software or dataset, please cite the paper below.
+  (GitHub shows this via the "Cite this repository" button.)
+title: "Musical DNA"
+abstract: >-
+  A two-component computational system connecting music theory, machine
+  learning, and copyright law. Component A fingerprints classical-composer
+  style from MIDI using 21 features (Random Forest, 88.7% six-composer test
+  accuracy). Component B applies pairwise similarity metrics to a hand-curated
+  dataset of 43 real music copyright cases and finds that non-musical factors
+  (e.g., plaintiff fame) predict case outcomes far better than musical
+  similarity alone. Includes an open-source audio-to-MIDI similarity pipeline
+  and an interactive dashboard.
+type: software
+authors:
+  - family-names: Gundluru
+    given-names: Nihal
+    orcid: "https://orcid.org/0009-0000-2967-2028"
+repository-code: "https://github.com/NihalG51/musical-dna"
+url: "https://musical-dna.streamlit.app"
+license: MIT
+version: "1.0.0"
+date-released: "2026-07-18"
+keywords:
+  - music information retrieval
+  - computational musicology
+  - composer classification
+  - music copyright
+  - substantial similarity
+  - similarity metrics
+  - machine learning
+  - random forest
+  - MIDI
+  - audio-to-MIDI transcription
+preferred-citation:
+  type: article
+  title: "Musical DNA: Computational Fingerprinting of Compositional Style and Its Application to Music Copyright Analysis"
+  authors:
+    - family-names: Gundluru
+      given-names: Nihal
+      orcid: "https://orcid.org/0009-0000-2967-2028"
+  year: 2026
+  publisher:
+    name: Zenodo
+  doi: "10.5281/zenodo.21433890"
+  url: "https://doi.org/10.5281/zenodo.21433890"

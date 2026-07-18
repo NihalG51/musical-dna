@@ -1,0 +1,38 @@
+{
+  "title": "Musical DNA: Computational Fingerprinting of Compositional Style and Its Application to Music Copyright Analysis (software and dataset)",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Gundluru, Nihal",
+      "orcid": "0009-0000-2967-2028",
+      "affiliation": "Independent researcher"
+    }
+  ],
+  "description": "Source code, copyright-case dataset, composer feature matrix, and interactive dashboard for the study 'Musical DNA'. Component A fingerprints classical-composer style from MIDI using 21 melodic, harmonic, rhythmic, and structural features (Random Forest, 88.7% six-composer test accuracy). Component B applies pairwise melodic, harmonic, rhythmic, and n-gram similarity metrics to a hand-curated dataset of 43 real music copyright cases (1946-2023) and finds that non-musical factors (plaintiff fame, defendant commercial success, expert testimony, litigation forum) predict case outcomes substantially better than musical similarity alone (AUC 0.86 vs. 0.39). Includes an open-source audio-to-MIDI similarity pipeline and a Streamlit dashboard. This archive accompanies the paper preprint (DOI 10.5281/zenodo.21433890).",
+  "keywords": [
+    "music information retrieval",
+    "computational musicology",
+    "composer classification",
+    "music copyright",
+    "substantial similarity",
+    "similarity metrics",
+    "machine learning",
+    "random forest",
+    "MIDI",
+    "audio-to-MIDI transcription"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.21433890",
+      "relation": "isSupplementTo",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://musical-dna.streamlit.app",
+      "relation": "isDocumentedBy",
+      "scheme": "url"
+    }
+  ]
+}
