@@ -1,6 +1,6 @@
 ---
 title: "Musical DNA: Computational Fingerprinting of Compositional Style and Its Application to Music Copyright Analysis"
-author: "Nihal"
+author: "Nihal Gundluru  ·  ORCID 0009-0000-2967-2028"
 date: "Independent Research Project, Summer 2026"
 ---
 

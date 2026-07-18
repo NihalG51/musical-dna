@@ -102,7 +102,7 @@ Note: `data/midi/` (composer and copyright-case audio) and `data/processed/*.csv
 
 ## Author
 
-**Nihal**, Rising Senior, Summer 2026
+**Nihal Gundluru**, Rising Senior, Summer 2026
 
 ## License
 
